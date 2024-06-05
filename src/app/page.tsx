@@ -1,5 +1,6 @@
 "use client";
-import { useEmailFields } from "@/components/context";
+import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 import { buttonStyle, inputStyle, labelStyle, mainHeading } from "@/components/style";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +9,72 @@ import { Textarea } from "@/components/ui/textarea";
 import { formLinks } from "@/lib/formLinks";
 
 export default function Home() {
-  const { formData, isEmailValid, handleInputChange, isAnyFieldEmpty, sendMail } = useEmailFields();
+  const { toast } = useToast();
+  const [isEmailValid, setIsEmailValid] = useState(false);
+  const [formData, setFormData] = useState<FormData>({
+    fullname: "",
+    email: "",
+    subject: "",
+    description: "",
+  });
+
+  const validateEmail = (email: string) => {
+    const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+    return emailPattern.test(email);
+  };
+
+  const handleInputChange = (e: any) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+
+    if (name === 'email') {
+      setIsEmailValid(validateEmail(value));
+    }
+  };
+
+  const isAnyFieldEmpty = () => {
+    for (const key in formData) {
+      if (formData[key].trim() === "") {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const isButtonDisabled = isAnyFieldEmpty() || !isEmailValid;
+
+  const sendMail = async (e: any) => {
+    e.preventDefault();
+    const response = await fetch("/api/sendEmail", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    });
+
+    if (response.ok) {
+      toast({
+        title: 'Email Send Successfully',
+      });
+    } else {
+      toast({
+        title: 'Email Sending Failed',
+      });
+    }
+    console.log(await response.json());
+
+    setFormData({
+      fullname: "",
+      email: "",
+      subject: "",
+      description: "",
+    });
+  };
+
 
   return (
     <section className="bg-slate-900 w-[100%] min-h-[100vh] py-12 lg:py-7 px-8 lg:px-20">
@@ -17,7 +82,7 @@ export default function Home() {
         <h2 className={`${mainHeading}`}>NextJS Email Sender</h2>
         <form onSubmit={sendMail}>
           {formLinks.map((formLink) => (
-            <>
+            <div key={formLink.id}>
               {formLink.content === "simple" ? (
                 <div key={formLink.id}>
                   <Label htmlFor={formLink.id} className={`${labelStyle}`}>{formLink.label}</Label>
@@ -29,7 +94,7 @@ export default function Home() {
                   <Textarea name={formLink.id} className={`${inputStyle}`} placeholder={formLink.placeholder} maxLength={formLink.maxLength} value={formData[formLink.id]} onChange={handleInputChange} />
                 </div>
               )}
-            </>
+            </div>
           ))}
 
           <div className="flex justify-center items-center">
@@ -37,6 +102,6 @@ export default function Home() {
           </div>
         </form>
       </div>
-    </section>
+    </section >
   );
 }
