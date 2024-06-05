@@ -8,6 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formLinks } from "@/lib/formLinks";
 
+interface FormData {
+  fullname: string;
+  email: string;
+  subject: string;
+  description: string;
+  [key: string]: string;
+}
+
 export default function Home() {
   const { toast } = useToast();
   const [isEmailValid, setIsEmailValid] = useState(false);
